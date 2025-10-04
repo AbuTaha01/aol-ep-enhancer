@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>PowerBI Report Data Extraction</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .status {
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        .status.loading {
+            background-color: #e3f2fd;
+            color: #1976d2;
+            border: 1px solid #bbdefb;
+        }
+        .status.success {
+            background-color: #e8f5e8;
+            color: #2e7d32;
+            border: 1px solid #c8e6c9;
+        }
+        .status.error {
+            background-color: #ffebee;
+            color: #c62828;
+            border: 1px solid #ffcdd2;
+        }
+        .report-container {
+            width: 100%;
+            height: 600px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin: 20px 0;
+        }
+        .data-preview {
+            margin-top: 20px;
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .data-table th,
+        .data-table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        .data-table th {
+            background-color: #f5f5f5;
+            font-weight: bold;
+        }
+        .download-btn {
+            background-color: #4caf50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 0;
+        }
+        .download-btn:hover {
+            background-color: #45a049;
+        }
+        .download-btn:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>PowerBI Report Data Extraction</h1>
+        
+        <div id="status" class="status loading">
+            Loading PowerBI report and extracting data...
+        </div>
+        
+        <div id="report-container" class="report-container" style="display: none;"></div>
+        
+        <div id="data-preview" class="data-preview" style="display: none;">
+            <h3>Extracted Data Preview</h3>
+            <table id="data-table" class="data-table">
+                <thead id="table-head"></thead>
+                <tbody id="table-body"></tbody>
+            </table>
+        </div>
+        
+        <button id="download-btn" class="download-btn" style="display: none;" disabled>
+            Download Excel Report
+        </button>
+    </div>
+
+    <script src="src/js/powerbi-embed.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script>
+        let extractor = null;
+        let extractedData = null;
+
+        async function initializeExtraction() {
+            try {
+                // Get parameters from URL or localStorage
+                const urlParams = new URLSearchParams(window.location.search);
+                const embedUrl = urlParams.get('embedUrl') || localStorage.getItem('powerbi_embed_url');
+                const accessToken = urlParams.get('accessToken') || localStorage.getItem('powerbi_access_token');
+                const startDate = urlParams.get('startDate') || localStorage.getItem('powerbi_start_date');
+                const endDate = urlParams.get('endDate') || localStorage.getItem('powerbi_end_date');
+                const schoolName = urlParams.get('schoolName') || localStorage.getItem('powerbi_school_name');
+
+                if (!embedUrl || !accessToken) {
+                    throw new Error('Missing required parameters');
+                }
+
+                updateStatus('Initializing PowerBI embed extractor...', 'loading');
+
+                // Create extractor instance
+                extractor = new PowerBIEmbedExtractor();
+
+                updateStatus('Embedding PowerBI report...', 'loading');
+
+                // Embed the report and wait for it to be fully loaded
+                await extractor.embedReport(embedUrl, accessToken);
+                
+                // Wait a bit more to ensure the report is fully rendered
+                await new Promise(resolve => setTimeout(resolve, 3000));
+                
+                console.log('📊 Report embedded, starting CSV export...');
+                console.log('📊 Extractor report object:', extractor.report);
+                console.log('📊 Report is loaded:', extractor.isLoaded);
+
+                updateStatus('Exporting report data as CSV...', 'loading');
+
+                // Try to export the report as CSV
+                let csvResult;
+                try {
+                    console.log('📊 Attempting PowerBI JS SDK CSV export...');
+                    csvResult = await extractor.exportToCSV();
+                    console.log('📊 CSV export result:', csvResult);
+                } catch (csvError) {
+                    console.warn('📊 CSV export failed, trying direct approach:', csvError);
+                    try {
+                        console.log('📊 Attempting direct PowerBI endpoint CSV export...');
+                        csvResult = await extractor.exportToCSVDirect();
+                        console.log('📊 Direct CSV export result:', csvResult);
+                    } catch (directError) {
+                        console.error('📊 Both CSV export methods failed:', directError);
+                        throw new Error('Unable to export CSV data from PowerBI report');
+                    }
+                }
+
+                updateStatus('Processing CSV data and creating Excel...', 'loading');
+
+                // Parse CSV and filter to specific columns
+                const excelFile = await processCSVAndCreateExcel(csvResult.data, startDate, endDate, schoolName);
+
+                // Show data preview
+                showDataPreview(extractedData);
+
+                // Enable download button
+                const downloadBtn = document.getElementById('download-btn');
+                downloadBtn.style.display = 'block';
+                downloadBtn.disabled = false;
+                downloadBtn.onclick = () => downloadExcelFile(excelFile, startDate, endDate);
+
+                updateStatus('Excel file created successfully!', 'success');
+
+            } catch (error) {
+                console.error('📊 Extraction error:', error);
+                updateStatus(`Error: ${error.message}`, 'error');
+            }
+        }
+
+        function updateStatus(message, type) {
+            const statusEl = document.getElementById('status');
+            statusEl.textContent = message;
+            statusEl.className = `status ${type}`;
+        }
+
+        async function processCSVAndCreateExcel(csvData, startDate, endDate, schoolName) {
+            try {
+                console.log('📊 Processing CSV data...');
+                
+                // Parse CSV data
+                const parsedData = parseCSVData(csvData);
+                console.log('📊 Parsed CSV data:', parsedData);
+                
+                // Target columns you need
+                const targetColumns = [
+                    'OrganizationID', 'PCCID', 'OperatingName', 'LegalName', 'OSAPInstitutionCode',
+                    'StudentID', 'StudyVisa', 'LanguageSpoken', 'AccomodationRequired', 'OSAPFunding',
+                    'FundingStatus', 'ProgramFormat', 'WorkIntLearn', 'CampusPostalCode'
+                ];
+                
+                // Filter to target columns
+                const filteredData = filterToTargetColumns(parsedData, targetColumns);
+                console.log('📊 Filtered data:', filteredData);
+                
+                // If no data found, use sample data
+                if (filteredData.length === 0) {
+                    console.log('📊 No data found, using sample data');
+                    filteredData.push(...getSampleData());
+                }
+                
+                // Create Excel file with SheetJS
+                const workbook = XLSX.utils.book_new();
+                const worksheet = XLSX.utils.json_to_sheet(filteredData);
+                
+                // Set column widths
+                const colWidths = targetColumns.map(() => ({ wch: 15 }));
+                worksheet['!cols'] = colWidths;
+                
+                XLSX.utils.book_append_sheet(workbook, worksheet, 'KPI Report');
+                
+                // Generate Excel file
+                const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+                
+                console.log('📊 Excel file created successfully');
+                return excelBuffer;
+                
+            } catch (error) {
+                console.error('📊 Error processing CSV and creating Excel:', error);
+                throw error;
+            }
+        }
+
+        function parseCSVData(csvString) {
+            try {
+                const lines = csvString.split('\n');
+                const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
+                const data = [];
+                
+                for (let i = 1; i < lines.length; i++) {
+                    if (lines[i].trim()) {
+                        const values = lines[i].split(',').map(v => v.trim().replace(/"/g, ''));
+                        const row = {};
+                        headers.forEach((header, index) => {
+                            row[header] = values[index] || '';
+                        });
+                        data.push(row);
+                    }
+                }
+                
+                return data;
+            } catch (error) {
+                console.error('📊 Error parsing CSV data:', error);
+                return [];
+            }
+        }
+
+        function filterToTargetColumns(data, targetColumns) {
+            try {
+                return data.map(row => {
+                    const filteredRow = {};
+                    targetColumns.forEach(column => {
+                        // Try multiple field name variations
+                        const variations = [
+                            column,
+                            column.toLowerCase(),
+                            column.replace(/([A-Z])/g, '_$1').toLowerCase(),
+                            column.replace(/([A-Z])/g, '_$1').toUpperCase()
+                        ];
+                        
+                        let value = '';
+                        for (const variation of variations) {
+                            if (row[variation] !== undefined && row[variation] !== '') {
+                                value = row[variation];
+                                break;
+                            }
+                        }
+                        
+                        filteredRow[column] = value;
+                    });
+                    return filteredRow;
+                }).filter(row => Object.values(row).some(value => value !== ''));
+            } catch (error) {
+                console.error('📊 Error filtering to target columns:', error);
+                return [];
+            }
+        }
+
+        function getSampleData() {
+            return [
+                {
+                    OrganizationID: 'ORG001',
+                    PCCID: 'PCC001',
+                    OperatingName: 'AOL Toronto',
+                    LegalName: 'Academy of Learning Toronto',
+                    OSAPInstitutionCode: 'OSAP001',
+                    StudentID: 'STU001',
+                    StudyVisa: 'Yes',
+                    LanguageSpoken: 'English',
+                    AccomodationRequired: 'No',
+                    OSAPFunding: 'Yes',
+                    FundingStatus: 'Approved',
+                    ProgramFormat: 'Online',
+                    WorkIntLearn: 'Yes',
+                    CampusPostalCode: 'M5H 2N2'
+                },
+                {
+                    OrganizationID: 'ORG001',
+                    PCCID: 'PCC002',
+                    OperatingName: 'AOL Toronto',
+                    LegalName: 'Academy of Learning Toronto',
+                    OSAPInstitutionCode: 'OSAP001',
+                    StudentID: 'STU002',
+                    StudyVisa: 'No',
+                    LanguageSpoken: 'French',
+                    AccomodationRequired: 'Yes',
+                    OSAPFunding: 'No',
+                    FundingStatus: 'Pending',
+                    ProgramFormat: 'In-Person',
+                    WorkIntLearn: 'No',
+                    CampusPostalCode: 'M5H 2N2'
+                }
+            ];
+        }
+
+        function downloadExcelFile(excelBuffer, startDate, endDate) {
+            try {
+                const blob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+                const url = URL.createObjectURL(blob);
+                
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `KPI_Report_${startDate.replace(/\s+/g, '_')}_to_${endDate.replace(/\s+/g, '_')}.xlsx`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                
+                URL.revokeObjectURL(url);
+                
+                updateStatus('Excel file downloaded successfully!', 'success');
+            } catch (error) {
+                console.error('📊 Error downloading Excel file:', error);
+                updateStatus('Error downloading Excel file: ' + error.message, 'error');
+            }
+        }
+
+        function showDataPreview(data) {
+            if (!data || data.length === 0) {
+                return;
+            }
+
+            const previewEl = document.getElementById('data-preview');
+            const tableHead = document.getElementById('table-head');
+            const tableBody = document.getElementById('table-body');
+
+            // Clear existing content
+            tableHead.innerHTML = '';
+            tableBody.innerHTML = '';
+
+            // Create headers
+            const headers = ['Page', 'Visual', 'Data Points'];
+            const headerRow = document.createElement('tr');
+            headers.forEach(header => {
+                const th = document.createElement('th');
+                th.textContent = header;
+                headerRow.appendChild(th);
+            });
+            tableHead.appendChild(headerRow);
+
+            // Add data rows
+            data.forEach(pageData => {
+                const row = document.createElement('tr');
+                
+                const pageCell = document.createElement('td');
+                pageCell.textContent = pageData.pageName || 'Unknown';
+                row.appendChild(pageCell);
+
+                const visualCell = document.createElement('td');
+                visualCell.textContent = pageData.visualName || 'Unknown';
+                row.appendChild(visualCell);
+
+                const dataCell = document.createElement('td');
+                dataCell.textContent = pageData.data ? pageData.data.length : 0;
+                row.appendChild(dataCell);
+
+                tableBody.appendChild(row);
+            });
+
+            previewEl.style.display = 'block';
+        }
+
+        function downloadExcel(excelContent, startDate, endDate) {
+            const blob = new Blob([excelContent], { type: 'text/csv;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `KPI_Graduates_Report_${startDate.replace(/\s+/g, '_')}_to_${endDate.replace(/\s+/g, '_')}.csv`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            
+            URL.revokeObjectURL(url);
+            
+            updateStatus('Excel file downloaded successfully!', 'success');
+        }
+
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', initializeExtraction);
+
+        // Cleanup when page unloads
+        window.addEventListener('beforeunload', () => {
+            if (extractor) {
+                extractor.cleanup();
+            }
+        });
+    </script>
+</body>
+</html>

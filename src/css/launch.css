@@ -1,0 +1,37 @@
+div.col-7.header-left.class-img>img {
+    height: 30px;
+}
+
+.col-5.header-right {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: center;
+}
+
+.class-img {
+    width: 15% !important;
+}
+
+.liveusercount,
+.welcome-message {
+    font-size: 1.5rem !important;
+    margin: 5px 0 !important;
+}
+
+.liveusercount {
+    margin-right: 10px !important;
+}
+
+.bghomepageimage {
+    height: calc(100vh - 30px) !important;
+}
+
+.bgcolor,
+.bgcolormodreq {
+    height: 100%!important;
+}
+
+#contractcourseinformation_wrapper > div > div.dataTables_scrollBody {
+    height: 100% !important;
+    max-height: 100% !important;
+}

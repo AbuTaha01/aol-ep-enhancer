@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AOL Enhancer</title>
+  <link href="css/tailwind.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="css/all.min.css">
+  <style>
+    body {
+      width: 400px;
+      padding: 20px;
+      text-align: center;
+    }
+
+    .p-6 {
+      padding: 1.5rem 1.5rem 0.5rem 1.5rem !important;
+    }
+
+    .mb-6 {
+      margin-bottom: 1rem;
+    }
+
+    .p-8 {
+      padding: 20px 2rem;
+    }
+
+    .setting-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin: 0.5rem;
+    }
+
+    input[type="number"],
+    input[type="text"],
+    input[type="password"] {
+      height: 30px;
+      border: 1px solid #e2e8f0;
+      border-radius: 0.25rem;
+      text-align: center;
+      width: 80px !important;
+      padding: 0 1rem;
+    }
+
+    .toggle-switch {
+      position: relative;
+      display: inline-block;
+      width: 40px;
+      height: 23px;
+    }
+
+    .toggle-switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: #e5e7eb;
+      transition: .4s;
+      border-radius: 34px;
+    }
+
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 15px;
+      width: 15px;
+      left: 4px;
+      bottom: 4px;
+      background-color: white;
+      transition: .4s;
+      border-radius: 50%;
+    }
+
+    input:checked+.slider {
+      background-color: #3b82f6;
+    }
+
+    input:checked+.slider:before {
+      transform: translateX(15px);
+    }
+
+    .button-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin-top: 15px;
+      width: 100%;
+    }
+
+    .tooltip {
+      margin: 0 10px;
+    }
+
+    .tooltip .tooltiptext {
+      visibility: visible;
+      width: 120px;
+      background-color: black;
+      color: #fff;
+      text-align: center;
+      border-radius: 6px;
+      padding: 0;
+      position: absolute;
+      z-index: 1;
+      bottom: 0;
+      left: 35%;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+
+    .tooltip:hover .tooltiptext {
+      visibility: visible;
+      opacity: 1;
+    }
+
+    #exportSettings,
+    #importSettings,
+    #reloadExtension,
+    #refreshData,
+    #openListViewer {
+      width: 24px;
+      height: 24px;
+      padding: 0;
+      bottom: 10px;
+    }
+
+    .tabset>input[type="radio"] {
+      position: absolute;
+      left: -200vw;
+    }
+
+    .tabset .tab-panel {
+      display: none;
+    }
+
+    .tabset>input:first-child:checked~.tab-panels>.tab-panel:first-child,
+    .tabset>input:nth-child(3):checked~.tab-panels>.tab-panel:nth-child(2),
+    .tabset>input:nth-child(5):checked~.tab-panels>.tab-panel:nth-child(3),
+    .tabset>input:nth-child(7):checked~.tab-panels>.tab-panel:nth-child(4),
+    .tabset>input:nth-child(9):checked~.tab-panels>.tab-panel:nth-child(5),
+    .tabset>input:nth-child(11):checked~.tab-panels>.tab-panel:nth-child(6) {
+      display: block;
+    }
+
+    .tabset>label {
+      position: relative;
+      display: inline-block;
+      padding: 5px 10px 5px;
+      border: 1px solid transparent;
+      border-bottom: 0;
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    input:focus-visible+label {
+      outline: 2px solid rgba(0, 102, 204, 1);
+      border-radius: 3px;
+    }
+
+    .tabset>label:hover,
+    .tabset>input:focus+label,
+    .tabset>input:checked+label {
+      color: #06c;
+    }
+
+    .tabset>label:hover::after,
+    .tabset>input:focus+label::after,
+    .tabset>input:checked+label::after {
+      background: #06c;
+    }
+
+    .tabset>input:checked+label {
+      border-color: #ccc;
+      border-bottom: 1px solid #fff;
+      margin-bottom: -1px;
+    }
+
+    .tab-panel {
+      padding: 0 0;
+      border-top: 1px solid #ccc;
+      border-bottom: 1px solid #ccc;
+    }
+
+    .update-banner {
+      background-color: #4CAF50;
+      color: white;
+      padding: 10px;
+      margin-bottom: 15px;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .update-banner button {
+      background-color: white;
+      color: #4CAF50;
+      border: none;
+      padding: 5px 10px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    .update-banner button:hover {
+      background-color: #f1f1f1;
+    }
+
+    .update-banner button:hover {
+      background-color: #f1f1f1;
+    }
+
+    .version-footer {
+      text-align: center;
+      font-size: 0.75rem;
+      margin-top: 5px;
+      color: #6b7280;
+    }
+
+    /* Refresh data button loading state - sadece icon dönsün */
+    #refreshData.loading i {
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      0% {
+        transform: rotate(0deg);
+      }
+
+      100% {
+        transform: rotate(360deg);
+      }
+    }
+  </style>
+</head>
+
+<body class="bg-gray-100 p-6">
+  <div class="max-w-md mx-auto bg-white rounded-xl shadow-md overflow-hidden md:max-w-2xl relative">
+    <div class="p-8">
+      <div class="flex items-center mb-6 justify-center">
+        <img src="icons/icon.png" alt="AOL Ticket Monitor" class="w-10 h-10 mr-4">
+        <h1 class="text-2xl font-bold text-gray-800">AOL Enhancer</h1>
+      </div>
+
+      <div id="update-notification" style="display: none;">
+        <div class="update-banner">
+          <strong>New update available!</strong>
+          <span id="version-info"></span>
+          <button id="update-button">Update</button>
+        </div>
+      </div>
+
+      <div class="tabset">
+        <!-- Tab 1 -->
+        <input type="radio" name="tabset" id="tab1" aria-controls="tab1" checked>
+        <label for="tab1">EP</label>
+        <!-- Tab 2 -->
+        <input type="radio" name="tabset" id="tab2" aria-controls="tab2">
+        <label for="tab2">Launch</label>
+        <!-- Tab 3 -->
+        <input type="radio" name="tabset" id="tab3" aria-controls="tab3">
+        <label for="tab3">Canvas</label>
+        <!-- Tab 4 -->
+        <input type="radio" name="tabset" id="tab4" aria-controls="tab4">
+        <label for="tab4">Verifast</label>
+        <div class="tab-panels">
+          <section id="tab1" class="tab-panel">
+            <div class="setting-row mb-4">
+              <label for="epUsername" class="block text-sm font-medium text-gray-700">Username:</label>
+              <input style="width: 150px !important;" type="text" id="username"
+                class="mt-1 rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
+            </div>
+            <div class="setting-row mb-4">
+              <label for="epPassword" class="block text-sm font-medium text-gray-700">Password:</label>
+              <input style="width: 150px !important;" type="password" id="password"
+                class="mt-1 rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
+            </div>
+          </section>
+          <section id="tab2" class="tab-panel">
+            <div class="setting-row mb-4">
+              <label for="launchUsername" class="block text-sm font-medium text-gray-700">Launch Username:</label>
+              <input style="width: 150px !important;" type="text" id="launchUsername"
+                class="mt-1 rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
+            </div>
+            <div class="setting-row mb-4">
+              <label for="launchPassword" class="block text-sm font-medium text-gray-700">Launch Password:</label>
+              <input style="width: 150px !important;" type="password" id="launchPassword"
+                class="mt-1 rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
+            </div>
+          </section>
+          <section id="tab3" class="tab-panel">
+            <div class="setting-row mb-4">
+              <label for="canvasUsername" class="block text-sm font-medium text-gray-700">Canvas Username:</label>
+              <input style="width: 150px !important;" type="text" id="canvasUsername"
+                class="mt-1 rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
+            </div>
+            <div class="setting-row mb-4">
+              <label for="canvasPassword" class="block text-sm font-medium text-gray-700">Canvas Password:</label>
+              <input style="width: 150px !important;" type="password" id="canvasPassword"
+                class="mt-1 rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
+            </div>
+          </section>
+          <section id="tab4" class="tab-panel">
+            <div class="setting-row mb-4">
+              <label for="verifastUsername" class="block text-sm font-medium text-gray-700">Verifast Username:</label>
+              <input style="width: 150px !important;" type="text" id="verifastUsername"
+                class="mt-1 rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
+            </div>
+            <div class="setting-row mb-4">
+              <label for="verifastPassword" class="block text-sm font-medium text-gray-700">Verifast Password:</label>
+              <input style="width: 150px !important;" type="password" id="verifastPassword"
+                class="mt-1 rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
+            </div>
+          </section>
+        </div>
+      </div>
+      <div class="setting-row mb-4">
+        <label for="checkInterval" class="block text-sm font-medium text-gray-700">Ticket Check Freq. (min.)</label>
+        <input type="number" id="checkInterval" step="0.1" min="0.1"
+          class="mt-1 rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
+      </div>
+      <div class="setting-row mb-4">
+        <label for="cooldownPeriod" class="block text-sm font-medium text-gray-700">Cooldown Period (minutes)</label>
+        <input type="number" id="cooldownPeriod" step="0.1" min="0.1"
+          class="mt-1 rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
+      </div>
+      <button id="saveOptions" class="w-full bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"> Save
+      </button>
+      <div class="setting-row mt-4">
+        <label for="autoLoginToggle" class="block text-sm font-medium text-gray-700">Auto Login</label>
+        <label class="toggle-switch">
+          <input type="checkbox" id="autoLoginToggle">
+          <span class="slider"></span>
+        </label>
+      </div>
+      <div class="setting-row mt-4">
+        <label for="sortOptionsToggle" class="block text-sm font-medium text-gray-700">Sort Templates A-Z</label>
+        <label class="toggle-switch">
+          <input type="checkbox" id="sortOptionsToggle">
+          <span class="slider"></span>
+        </label>
+      </div>
+      <div class="setting-row mb-4">
+        <label for="activeToggle" class="block text-sm font-medium text-gray-700">Ticket Monitor Status</label>
+        <label class="toggle-switch">
+          <input type="checkbox" id="activeToggle">
+          <span class="slider"></span>
+        </label>
+      </div>
+      <div class="setting-row mt-4">
+        <label for="closeTabAfterSaveToggle" class="block text-sm font-medium text-gray-700">Close Tab After
+          Send & Close</label>
+        <label class="toggle-switch">
+          <input type="checkbox" id="closeTabAfterSaveToggle">
+          <span class="slider"></span>
+        </label>
+      </div>
+      <div class="button-container">
+        <div class="tooltip">
+          <button id="exportSettings" class="bg-gray-300 hover:bg-gray-400 text-gray-600 font-bold rounded">
+            <i class="fas fa-download"></i>
+          </button>
+          <span class="tooltiptext">Export Settings</span>
+        </div>
+        <div class="tooltip">
+          <button id="importSettings" class="bg-gray-300 hover:bg-gray-400 text-gray-600 font-bold rounded">
+            <i class="fas fa-upload"></i>
+          </button>
+          <span class="tooltiptext">Import Settings</span>
+        </div>
+        <div class="tooltip">
+          <button id="refreshData" class="bg-gray-300 hover:bg-gray-400 text-gray-600 font-bold rounded">
+            <i class="fas fa-sync-alt"></i>
+          </button>
+          <span class="tooltiptext">Refresh Data</span>
+        </div>
+        <div class="tooltip">
+          <button id="reloadExtension" class="bg-gray-300 hover:bg-gray-400 text-gray-600 font-bold rounded">
+            <i class="fas fa-redo"></i>
+          </button>
+          <span class="tooltiptext">Reload Extension</span>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="version-footer">
+    <span id="current-version">Version: </span>
+  </div>
+  </div>
+  <script src="libs/pdf-lib.min.js"></script>
+  <script src="libs/pdf.min.js"></script>
+  <script src="libs/pdf.worker.min.js"></script>
+  <script src="js/main/popup.js"></script>
+</body>
+
+<!-- ===== PDF Signature Stamper (HTML only) ===== -->
+<section id="sig-block" style="margin-top:12px;border-top:1px solid #e5e7eb;padding-top:12px;">
+  <h3 style="margin:0 0 10px;">Stamp PDFs with pre-configured signature</h3>
+
+  <!-- Files -->
+  <div class="sig-row" style="margin-bottom:10px;">
+    <label for="sig-pdfFiles" style="display:block;margin-bottom:4px;">PDF files</label>
+    <input id="sig-pdfFiles" type="file" accept="application/pdf" multiple />
+    <div class="sig-hint" style="color:#6b7280;font-size:12px;margin-top:4px;">
+      You can select multiple PDFs. Signature image is already configured.
+    </div>
+  </div>
+
+  <!-- Actions -->
+  <div class="sig-actions" style="display:flex;gap:10px;align-items:center;">
+    <button id="sig-go" type="button" style="padding:8px 12px;border-radius:8px;border:1px solid #e5e7eb;background:#111827;color:#fff;cursor:pointer;">
+  Stamp PDFs
+</button>
+    <button id="debug-text" type="button" style="padding:8px 12px;border-radius:8px;border:1px solid #e5e7eb;background:#6b7280;color:#fff;cursor:pointer;">
+  Debug Text
+</button>
+    <button id="debug-placement" type="button" style="padding:8px 12px;border-radius:8px;border:1px solid #e5e7eb;background:#059669;color:#fff;cursor:pointer;">
+  Debug Placement
+</button>
+
+    <div id="sig-status" style="color:#6b6d80;font-size:12px;"></div>
+  </div>
+</section>
+<!-- ===== /PDF Signature Stamper (HTML only) ===== -->
+
+
+</html>

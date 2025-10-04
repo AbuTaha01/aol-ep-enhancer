@@ -1,0 +1,103 @@
+[
+  {
+    "id": 1,
+    "priority": 1,
+    "action": {
+      "type": "redirect",
+      "redirect": {
+        "url": "https://aoltorontoagents.ca/student_contract/chat/mine_list.php"
+      }
+    },
+    "condition": {
+      "regexFilter": "^https?://aoltorontoagents\\.ca/student_contract/(helpdesk/new-request|helpdesk/search|helpdesk/dashboard)[^?]*$",
+      "resourceTypes": [
+        "main_frame"
+      ],
+      "isUrlFilterCaseSensitive": false,
+      "excludeRequestHeaders": [
+        {
+          "header": "Referer",
+          "contains": "student_contract"
+        }
+      ],
+      "requestMethods": [
+        "get"
+      ]
+    }
+  },
+  {
+    "id": 2,
+    "priority": 1,
+    "action": {
+      "type": "redirect",
+      "redirect": {
+        "url": "https://aoltorontoagents.ca/student_contract/chat/mine_list.php"
+      }
+    },
+    "condition": {
+      "regexFilter": "^https?://aoltorontoagents\\.ca/student_contract/(requests|request|dashboard|category)[^?]*$",
+      "resourceTypes": [
+        "main_frame"
+      ],
+      "isUrlFilterCaseSensitive": false,
+      "excludeRequestHeaders": [
+        {
+          "header": "Referer",
+          "contains": "student_contract"
+        }
+      ],
+      "requestMethods": [
+        "get"
+      ]
+    }
+  },
+  {
+    "id": 3,
+    "priority": 1,
+    "action": {
+      "type": "redirect",
+      "redirect": {
+        "extensionPath": "/src/libs/app.js"
+      }
+    },
+    "condition": {
+      "urlFilter": "https://aoltorontoagents.ca/student_contract/js/app.js",
+      "resourceTypes": [
+        "script"
+      ]
+    }
+  },
+  {
+    "id": 4,
+    "priority": 2,
+    "action": {
+      "type": "block"
+    },
+    "condition": {
+      "regexFilter": "file:///*",
+      "resourceTypes": ["image", "media", "object", "xmlhttprequest", "sub_frame"]
+    }
+  },
+  {
+    "id": 5,
+    "priority": 2,
+    "action": {
+      "type": "block"
+    },
+    "condition": {
+      "regexFilter": ".*%60https?://.*",
+      "resourceTypes": ["image", "media", "object", "xmlhttprequest", "sub_frame"]
+    }
+  },
+  {
+    "id": 6,
+    "priority": 2,
+    "action": {
+      "type": "block"
+    },
+    "condition": {
+      "regexFilter": ".*`https?://.*",
+      "resourceTypes": ["image", "media", "object", "xmlhttprequest", "sub_frame"]
+    }
+  }
+]

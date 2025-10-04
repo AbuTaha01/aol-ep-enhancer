@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Weekly Reports</title>
+    <script src="libs/xlsx.full.min.js"></script>
+    <script src="libs/flatpickr.js"></script>
+    <link rel="stylesheet" href="css/all.min.css">
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/flatpickr.min.css">
+</head>
+
+<body>
+    <div class="list-container">
+        <div class="button-container">
+            <h1>Weekly Reports</h1>
+            <div class="excel-buttons">
+                <button id="downloadAllReportsBtn" class="action-btn" disabled>
+                    <i class="fas fa-file-excel"></i> Download All Reports
+                </button>
+                <button id="downloadExcelBtn" class="action-btn" disabled>
+                    <i class="fas fa-file-excel"></i> Download Filtered Reports
+                </button>
+            </div>
+        </div>
+
+        <div id="loadingIndicator" class="loading-container" style="display: none;">
+            <div class="loading-spinner">
+                <i class="fas fa-spinner fa-spin"></i>
+            </div>
+        </div>
+
+        <div id="reportsArea" class="content-area" style="display: block;">
+            <div class="filter-section" id="filterSection" style="display: none;">
+                <div class="filter-group">
+                    <div id="program-buttons" class="program-buttons-wrapper">
+                        <!-- Program filter buttons will be added here by JS -->
+                    </div>
+                </div>
+
+                <div class="filter-options">
+                    <!-- Campus filters -->
+                    <div class="filter-block">
+                        <div class="filter-title">Campus</div>
+                        <div class="filter-checkbox-group" id="campus-filters">
+                            <!-- Campus filters will be added here by JS -->
+                        </div>
+                    </div>
+
+                    <!-- CPL filters -->
+                    <div class="filter-block">
+                        <div class="filter-title">CPL</div>
+                        <div class="filter-checkbox-group" id="cpl-filters">
+                            <!-- CPL filters will be added here by JS -->
+                        </div>
+                    </div>
+
+                    <!-- Pending Hours filters -->
+                    <div class="filter-block">
+                        <div class="filter-title">Weekly Pending Hours</div>
+                        <div class="filter-checkbox-group" id="pending-hours-filters">
+                            <label>
+                                <input type="checkbox" class="pending-hours-filter" value="low_pending"> Low (1-20h)
+                            </label>
+                            <label>
+                                <input type="checkbox" class="pending-hours-filter" value="medium_pending"> Medium (21-40h)
+                            </label>
+                            <label>
+                                <input type="checkbox" class="pending-hours-filter" value="high_pending"> High (41h+)
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Progress Status filters -->
+                    <div class="filter-block">
+                        <div class="filter-title">Progress Status</div>
+                        <div class="filter-checkbox-group" id="status-filters">
+                            <!-- Status filters will be added here by JS -->
+                        </div>
+                    </div>
+
+                    <!-- Average Marks filters -->
+                    <div class="filter-block">
+                        <div class="filter-title">Average Marks</div>
+                        <div class="filter-checkbox-group" id="marks-filters">
+                            <label>
+                                <input type="checkbox" class="marks-filter" value="below_70"> Below 70
+                            </label>
+                            <label>
+                                <input type="checkbox" class="marks-filter" value="70_80"> 70-80 Range
+                            </label>
+                            <label>
+                                <input type="checkbox" class="marks-filter" value="80_90"> 80-90 Range
+                            </label>
+                            <label>
+                                <input type="checkbox" class="marks-filter" value="above_90"> Above 90
+                            </label>
+                            <label>
+                                <input type="checkbox" class="marks-filter" value="n_a_marks"> N/A Marks
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Time Completion filters -->
+                    <div class="filter-block">
+                        <div class="filter-title">Time Completion</div>
+                        <div class="filter-checkbox-group" id="time-filters">
+                            <label>
+                                <input type="checkbox" class="time-filter" value="below_50"> Below 50%
+                            </label>
+                            <label>
+                                <input type="checkbox" class="time-filter" value="50_80"> 50-80%
+                            </label>
+                            <label>
+                                <input type="checkbox" class="time-filter" value="80_90"> 80-90%
+                            </label>
+                            <label>
+                                <input type="checkbox" class="time-filter" value="above_90"> Above 90%
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Course Completion filters -->
+                    <div class="filter-block">
+                        <div class="filter-title">Course Completion</div>
+                        <div class="filter-checkbox-group" id="course-filters">
+                            <label>
+                                <input type="checkbox" class="course-filter" value="below_50"> Below 50%
+                            </label>
+                            <label>
+                                <input type="checkbox" class="course-filter" value="50_80"> 50-80%
+                            </label>
+                            <label>
+                                <input type="checkbox" class="course-filter" value="80_90"> 80-90%
+                            </label>
+                            <label>
+                                <input type="checkbox" class="course-filter" value="above_90"> Above 90%
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="table-container" id="tableContainer">
+                <!-- Table will be generated here -->
+                <div class="no-data-message">Loading weekly reports data...</div>
+            </div>
+
+            <div class="pagination-controls" id="paginationControls" style="display: none;">
+                <button id="prevPage">Previous</button>
+                <span id="pageInfo">Page 1 of 1</span>
+                <button id="nextPage">Next</button>
+            </div>
+        </div>
+
+    </div>
+
+    <script src="js/core/utils.js"></script>
+    <script src="js/core/services.js"></script>
+    <script src="js/tools/weekly-reports.js"></script>
+    <script src="js/core/errorHandler.js"></script>
+</body>
+
+</html>

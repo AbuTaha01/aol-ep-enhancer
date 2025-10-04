@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>First Course Activator</title>
+    <script src="libs/xlsx.full.min.js"></script>
+    <link rel="stylesheet" href="css/all.min.css">
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+
+<body>
+    <div class="list-container">
+
+        <div class="button-container">
+            <h1>First Course Activator</h1>
+            <button id="firstCourseBtn" class="action-btn" style="display: none;">
+                <i class="fas fa-book"></i> First Course Activator
+            </button>
+            <button id="settingsBtn" title="Settings">
+                <a href="settings.html" id="settingsBtn" class="action-btn" title="Settings">
+                    <i class="fas fa-cog"></i>
+                </a>
+            </button>
+        </div>
+
+        <div id="firstCourseArea" class="content-area" style="display: block;">
+            <div class="file-input-zone" id="dropZone">
+                <input type="file" id="excelFile" accept=".xlsx,.xls" class="file-input">
+                <p>Drop Excel file here or click to select</p>
+            </div>
+            <div id="list-container"
+                style="display: flex;flex-direction: row-reverse;justify-content: space-between; align-items: center;">
+            </div>
+            <div id="tableContainer"></div>
+        </div>
+
+    </div>
+    <script src="js/core/utils.js"></script>
+    <script src="js/core/services.js"></script>
+    <script src="js/tools/list-viewer.js"></script>
+    <script src="js/core/errorHandler.js"></script>
+</body>
+
+</html>

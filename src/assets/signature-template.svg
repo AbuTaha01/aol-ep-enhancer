@@ -1,0 +1,10 @@
+<svg width="180" height="72" xmlns="http://www.w3.org/2000/svg">
+  <rect width="180" height="72" fill="none" stroke="#ccc" stroke-width="1" stroke-dasharray="5,5"/>
+  <text x="90" y="40" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" fill="#999">
+    Your Signature Here
+  </text>
+  <text x="90" y="55" font-family="Arial, sans-serif" font-size="10" text-anchor="middle" fill="#999">
+    Replace with signature.png
+  </text>
+</svg>
+

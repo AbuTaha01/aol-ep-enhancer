@@ -1,0 +1,7 @@
+This is a placeholder file for the signature image.
+
+Please replace this file with your actual signature image file (PNG or JPG format).
+Recommended: Use a transparent PNG for best results.
+
+The file should be named: signature.png or signature.jpg
+

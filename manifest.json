@@ -1,0 +1,114 @@
+{
+  "manifest_version": 3,
+  "name": "AOL Enhancer",
+  "version": "5.1.1",
+  "description": "Monitors tickets and requests, enhances and verifies PDF handling and adds various functionality on AOL EP",
+  "permissions": [
+    "tabs",
+    "notifications",
+    "scripting",
+    "storage",
+    "unlimitedStorage",
+    "alarms",
+    "clipboardWrite",
+    "downloads",
+    "declarativeNetRequest",
+    "webRequest",
+    "activeTab",
+    "cookies"
+  ],
+  "host_permissions": [
+    "*://aoltorontoagents.ca/*",
+    "*://mynew.aolcc.ca/*",
+    "*://*.academyoflearning.net/*",
+    "*://*.myaolcc.ca/*",
+    "*://*.verifast.com/*",
+    "*://*.momentest.net/*",
+    "chrome-extension://*/"
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "*.pdf",
+        "*.jpg",
+        "*.jpeg",
+        "*.png",
+        "*.gif",
+        "src/libs/*",
+        "src/assets/*",
+        "src/list-viewer.html",
+        "src/weekly-reports.html",
+        "src/powerbi-embed-page.html",
+        "src/js/powerbi-embed.js"
+      ],
+      "matches": [
+        "<all_urls>"
+      ],
+      "use_dynamic_url": true
+    }
+  ],
+  "declarative_net_request": {
+    "rule_resources": [
+      {
+        "id": "helpdesk_rules",
+        "enabled": true,
+        "path": "src/libs/rules.json"
+      }
+    ]
+  },
+  "background": {
+    "service_worker": "src/js/main/background.js"
+  },
+  "action": {
+    "default_popup": "src/popup.html"
+  },
+  "icons": {
+    "48": "src/icons/icon48.png",
+    "128": "src/icons/icon128.png"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "*://aoltorontoagents.ca/*",
+        "*://aoltorontoagents.ca/student_contract/lists/addEdit.php?T3ZlckFsbEVuY3JwdHJlcg==*"
+      ],
+      "css": [
+        "src/css/styles.css"
+      ],
+      "exclude_matches": [
+        "https://aoltorontoagents.ca/student_contract/Schedule_Program/*"
+      ],
+      "js": [
+        "src/libs/jquery.min.js",
+        "src/libs/jquery.dataTables.min.js",
+        "src/libs/xlsx.full.min.js",
+        "src/js/core/config.js",
+        "src/js/core/errorHandler.js",
+        "src/js/core/stateManager.js",
+        "src/js/core/utils.js",
+        "src/js/core/observerManager.js",
+        "src/js/core/eventManager.js",
+        "src/js/core/services.js",
+        "src/js/core/mainFunctionality.js",
+        "src/js/managers/dataTableManager.js",
+        "src/js/managers/uiManager.js",
+        "src/js/managers/ticketManager.js",
+        "src/js/managers/ticketDetailManager.js",
+        "src/js/managers/studentProfileManager.js",
+        "src/js/managers/helpDeskManager.js",
+        "src/js/main/content.js"
+      ]
+    },
+    {
+      "matches": [
+        "*://*.academyoflearning.net/*"
+      ],
+      "css": [
+        "src/css/launch.css"
+      ]
+    }
+  ],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'; style-src 'self' 'unsafe-inline';"
+  }
+}
