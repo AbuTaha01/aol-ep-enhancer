@@ -1,6 +1,6 @@
 {
-  "version": 2,
-  "outputDirectory": "public",
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
   "functions": {
     "api/export-csv.js": {
       "maxDuration": 60

@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "dev": "vercel dev",
+    "build": "node -e \"const fs=require('fs'); if(!fs.existsSync('dist')) fs.mkdirSync('dist'); fs.copyFileSync('public/index.html', 'dist/index.html');\"",
     "deploy": "vercel --prod"
   },
   "keywords": [

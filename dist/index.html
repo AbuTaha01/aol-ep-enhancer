@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AOL-EP-Enhancer API</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        .status {
+            background: #e8f5e8;
+            border: 1px solid #4caf50;
+            color: #2e7d32;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        .endpoint {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+            font-family: monospace;
+        }
+        .method {
+            background: #007bff;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 3px;
+            font-size: 12px;
+            margin-right: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 AOL-EP-Enhancer API</h1>
+        
+        <div class="status">
+            ✅ <strong>API is running!</strong> This is the backend service for the AOL-EP-Enhancer Chrome extension.
+        </div>
+
+        <h2>Available Endpoints:</h2>
+        
+        <div class="endpoint">
+            <span class="method">GET</span>
+            <strong>/api/health</strong> - Health check endpoint
+        </div>
+        
+        <div class="endpoint">
+            <span class="method">POST</span>
+            <strong>/api/export-csv</strong> - PowerBI CSV export endpoint
+        </div>
+
+        <h2>About</h2>
+        <p>This API provides PowerBI Export-to-File functionality for the AOL-EP-Enhancer Chrome extension. It handles the server-side authentication and API calls required for headless CSV export.</p>
+        
+        <h2>Usage</h2>
+        <p>This API is designed to be used by the Chrome extension. For manual testing, you can use the health endpoint:</p>
+        <div class="endpoint">
+            <a href="/api/health" target="_blank">/api/health</a>
+        </div>
+    </div>
+</body>
+</html>
