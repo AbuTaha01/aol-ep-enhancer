@@ -2980,8 +2980,8 @@ class LaunchManager {
     try {
       console.log("📊 LaunchManager: Starting headless CSV export using Export-to-File REST API");
       
-      // Call the backend API for headless CSV export
-      const backendUrl = 'http://localhost:3001/api/export-csv';
+      // Call the cloud API for headless CSV export
+      const backendUrl = 'https://aol-ep-enhancer.vercel.app/api/export-csv';
       const exportRequest = {
         embedToken: embedToken,
         workspaceId: workspaceId,

@@ -1,0 +1,29 @@
+{
+  "name": "aol-ep-enhancer",
+  "version": "1.0.0",
+  "description": "AOL-EP-Enhancer Chrome extension with PowerBI export functionality",
+  "main": "index.js",
+  "scripts": {
+    "dev": "vercel dev",
+    "build": "echo 'No build step required'",
+    "deploy": "vercel --prod"
+  },
+  "keywords": [
+    "chrome-extension",
+    "powerbi",
+    "aol",
+    "academy-of-learning",
+    "kpi-export"
+  ],
+  "author": "AOL Development Team",
+  "license": "Private",
+  "dependencies": {
+    "axios": "^1.6.8"
+  },
+  "devDependencies": {
+    "vercel": "^32.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
