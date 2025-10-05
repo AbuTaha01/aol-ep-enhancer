@@ -1,7 +1,7 @@
 // Vercel serverless function for PowerBI Export-to-File REST API
 // This handles the PowerBI CSV export requests from the Chrome extension
 
-const axios = require('axios');
+// Using built-in fetch instead of axios to avoid dependency issues
 
 export default async function handler(req, res) {
   // Set CORS headers for Chrome extension
@@ -67,29 +67,34 @@ export default async function handler(req, res) {
       paginatedReportConfiguration: { parameterValues: parameters }
     });
     
-    const start = await axios.post(
+    const startResponse = await fetch(
       `https://api.powerbi.com/v1.0/myorg/groups/${workspaceId}/reports/${reportId}/ExportTo`,
       {
-        format: "CSV",
-        paginatedReportConfiguration: { parameterValues: parameters }
-      },
-      { 
+        method: 'POST',
         headers: { 
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json'
-        } 
+        },
+        body: JSON.stringify({
+          format: "CSV",
+          paginatedReportConfiguration: { parameterValues: parameters }
+        })
       }
-    ).catch(error => {
-      console.error('📊 Vercel: PowerBI API error:', {
-        status: error.response?.status,
-        statusText: error.response?.statusText,
-        data: error.response?.data,
-        message: error.message
-      });
-      throw new Error(`PowerBI API error: ${error.response?.status} - ${error.response?.data?.error?.message || error.message}`);
-    });
+    );
 
-    const exportId = start.data.id;
+    if (!startResponse.ok) {
+      const errorData = await startResponse.text();
+      console.error('📊 Vercel: PowerBI API error:', {
+        status: startResponse.status,
+        statusText: startResponse.statusText,
+        data: errorData
+      });
+      throw new Error(`PowerBI API error: ${startResponse.status} - ${errorData}`);
+    }
+
+    const start = await startResponse.json();
+
+    const exportId = start.id;
     console.log(`📊 Vercel: Export job started, ID: ${exportId}`);
 
     // 2) Poll until Succeeded
@@ -97,7 +102,7 @@ export default async function handler(req, res) {
     for (let i = 0; i < 30; i++) { // Max 30 attempts (60 seconds)
       await new Promise(r => setTimeout(r, 2000)); // Poll every 2 seconds
       
-      const poll = await axios.get(
+      const pollResponse = await fetch(
         `https://api.powerbi.com/v1.0/myorg/groups/${workspaceId}/reports/${reportId}/exports/${exportId}`,
         { 
           headers: { 
@@ -106,12 +111,17 @@ export default async function handler(req, res) {
         }
       );
       
-      console.log(`📊 Vercel: Export status for ${exportId}: ${poll.data.status}`);
+      if (!pollResponse.ok) {
+        throw new Error(`Polling failed: ${pollResponse.status} - ${pollResponse.statusText}`);
+      }
       
-      if (poll.data.status === "Succeeded") break;
-      if (poll.data.status === "Failed") {
-        console.error("📊 Vercel: Export failed:", poll.data.error);
-        throw new Error(`Export failed: ${poll.data.error?.message || 'Unknown error'}`);
+      const poll = await pollResponse.json();
+      console.log(`📊 Vercel: Export status for ${exportId}: ${poll.status}`);
+      
+      if (poll.status === "Succeeded") break;
+      if (poll.status === "Failed") {
+        console.error("📊 Vercel: Export failed:", poll.error);
+        throw new Error(`Export failed: ${poll.error?.message || 'Unknown error'}`);
       }
       if (i === 29) { // Last attempt
         throw new Error("Export polling timed out.");
@@ -120,20 +130,24 @@ export default async function handler(req, res) {
 
     // 3) Download the file bytes
     console.log(`📊 Vercel: Export succeeded, downloading file for job ${exportId}...`);
-    const file = await axios.get(
+    const fileResponse = await fetch(
       `https://api.powerbi.com/v1.0/myorg/groups/${workspaceId}/reports/${reportId}/exports/${exportId}/file`,
       { 
         headers: { 
           Authorization: `Bearer ${token}` 
-        }, 
-        responseType: "arraybuffer" 
+        }
       }
     );
     
-    console.log(`📊 Vercel: File downloaded, size: ${file.data.length} bytes`);
+    if (!fileResponse.ok) {
+      throw new Error(`File download failed: ${fileResponse.status} - ${fileResponse.statusText}`);
+    }
+    
+    const fileBuffer = await fileResponse.arrayBuffer();
+    console.log(`📊 Vercel: File downloaded, size: ${fileBuffer.byteLength} bytes`);
 
     // Convert to base64 and return
-    const base64 = Buffer.from(file.data).toString("base64");
+    const base64 = Buffer.from(fileBuffer).toString("base64");
     const filename = `KPI_Report_CSV_${startDate.replace(/\s+/g, '_')}_to_${endDate.replace(/\s+/g, '_')}.csv`;
     
     console.log(`📊 Vercel: Export completed successfully, filename: ${filename}`);
