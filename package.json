@@ -17,7 +17,9 @@
   ],
   "author": "AOL Development Team",
   "license": "Private",
-  "dependencies": {},
+  "dependencies": {
+    "axios": "^1.6.8"
+  },
   "devDependencies": {
     "vercel": "^32.0.0"
   },

@@ -1,14 +1,11 @@
 {
+  "installCommand": "npm ci",
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "functions": {
-    "api/export-csv.js": {
-      "maxDuration": 60,
-      "runtime": "@vercel/node@3.0.18"
-    },
-    "api/health.js": {
-      "maxDuration": 10,
-      "runtime": "@vercel/node@3.0.18"
+    "api/*.js": {
+      "runtime": "nodejs18.x",
+      "maxDuration": 300
     }
   },
   "headers": [
