@@ -1,4 +1,4 @@
-// Helper functions using built-in fetch (Node.js 18+)
+// Helper functions using built-in fetch (Node.js 18+) - VERSION 2.0 - NO AXIOS
 function setCors(res, origin) {
   const ALLOWED_ORIGINS = [
     'chrome-extension://cjollmpjlbggmodndfamooliloonmnbh',
@@ -41,6 +41,7 @@ async function pbiGet(url, token, as = 'json') {
 }
 
 module.exports = async (req, res) => {
+  console.log('🚀 NEW VERSION 2.0 - NO AXIOS - Function started');
   setCors(res, req.headers.origin);
   if (req.method === 'OPTIONS') return res.status(204).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method Not Allowed' });
