@@ -1,5 +1,30 @@
-const axios = require('axios');
 const { setCors } = require('./_cors');
+
+// Helper functions using built-in fetch
+async function pbiPost(url, body, token) {
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: { 
+      'authorization': `Bearer ${token}`, 
+      'content-type': 'application/json' 
+    },
+    body: JSON.stringify(body)
+  });
+  if (!response.ok) throw new Error(`PBI POST ${response.status}: ${await response.text()}`);
+  return response.json();
+}
+
+async function pbiGet(url, token, as = 'json') {
+  const response = await fetch(url, { 
+    headers: { 'authorization': `Bearer ${token}` } 
+  });
+  if (!response.ok) throw new Error(`PBI GET ${response.status}: ${await response.text()}`);
+  if (as === 'buffer') {
+    const arrayBuffer = await response.arrayBuffer();
+    return Buffer.from(arrayBuffer);
+  }
+  return response.json();
+}
 
 module.exports = async (req, res) => {
   setCors(res, req.headers.origin);
@@ -13,48 +38,38 @@ module.exports = async (req, res) => {
     
     if (!groupId || !reportId) return res.status(400).json({ error: 'Missing groupId/reportId' });
 
+    const token = process.env.POWERBI_EMBED_TOKEN;
+    if (!token) return res.status(500).json({ error: 'No PowerBI embed token configured' });
+
     step.name = 'startExport';
-    const start = await axios.post(
+    const start = await pbiPost(
       `https://api.powerbi.com/v1.0/myorg/groups/${groupId}/reports/${reportId}/ExportTo`,
       { format: 'CSV', paginatedReportConfiguration: { parameterValues: params || [] } },
-      { 
-        headers: { 
-          Authorization: `Bearer ${process.env.POWERBI_EMBED_TOKEN}`,
-          'Content-Type': 'application/json'
-        } 
-      }
+      token
     );
-    const exportId = start.data.id;
+    const exportId = start.id;
 
     step.name = 'poll';
     const deadline = Date.now() + 240000;
     for (;;) {
       await new Promise(r => setTimeout(r, 2000));
-      const poll = await axios.get(
+      const poll = await pbiGet(
         `https://api.powerbi.com/v1.0/myorg/groups/${groupId}/reports/${reportId}/exports/${exportId}`,
-        { 
-          headers: { 
-            Authorization: `Bearer ${process.env.POWERBI_EMBED_TOKEN}` 
-          } 
-        }
+        token
       );
-      if (poll.data.status === 'Succeeded') break;
-      if (poll.data.status === 'Failed') throw new Error(`Export failed: ${JSON.stringify(poll.data)}`);
+      if (poll.status === 'Succeeded') break;
+      if (poll.status === 'Failed') throw new Error(`Export failed: ${JSON.stringify(poll)}`);
       if (Date.now() > deadline) throw new Error('Timeout waiting for export');
     }
 
     step.name = 'download';
-    const file = await axios.get(
+    const buffer = await pbiGet(
       `https://api.powerbi.com/v1.0/myorg/groups/${groupId}/reports/${reportId}/exports/${exportId}/file`,
-      { 
-        headers: { 
-          Authorization: `Bearer ${process.env.POWERBI_EMBED_TOKEN}` 
-        }, 
-        responseType: "arraybuffer" 
-      }
+      token,
+      'buffer'
     );
 
-    const base64 = Buffer.from(file.data).toString("base64");
+    const base64 = buffer.toString('base64');
     return res.status(200).json({ filename: `report_${Date.now()}.csv`, base64 });
   } catch (e) {
     // keep CORS headers on error responses
