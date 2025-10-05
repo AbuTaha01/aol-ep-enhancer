@@ -2,13 +2,22 @@
 // This handles the PowerBI CSV export requests from the Chrome extension
 
 const axios = require('axios');
-const { setCors } = require('./_cors');
 
-module.exports = async (req, res) => {
-  setCors(res, req.headers.origin);
+export default async function handler(req, res) {
+  // Set CORS headers for Chrome extension
+  const origin = req.headers.origin;
+  if (origin && origin.startsWith('chrome-extension://')) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+  } else {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+  }
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.setHeader('Access-Control-Max-Age', '86400');
 
+  // Handle preflight OPTIONS request
   if (req.method === 'OPTIONS') {
-    res.status(204).end();
+    res.status(200).end();
     return;
   }
 
