@@ -1,6 +1,6 @@
 const { setCors } = require('./_cors');
 
-// Helper functions using built-in fetch
+// Helper functions using built-in fetch (Node.js 18+)
 async function pbiPost(url, body, token) {
   const response = await fetch(url, {
     method: 'POST',
