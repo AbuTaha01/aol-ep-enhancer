@@ -3,9 +3,11 @@
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "functions": {
-    "api/*.js": {
-      "runtime": "@vercel/node@3.0.18",
+    "api/export-csv.js": {
       "maxDuration": 300
+    },
+    "api/health.js": {
+      "maxDuration": 10
     }
   },
   "headers": [
