@@ -9,9 +9,6 @@
       "maxDuration": 10
     }
   },
-  "deploymentProtection": {
-    "exclude": ["/api/*"]
-  },
   "headers": [
     {
       "source": "/api/(.*)",
