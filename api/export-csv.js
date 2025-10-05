@@ -1,168 +1,90 @@
-// Vercel serverless function for PowerBI Export-to-File REST API
-// This handles the PowerBI CSV export requests from the Chrome extension
+const { setCors } = require('./_cors');
 
-// Using built-in fetch instead of axios to avoid dependency issues
+// --- Helpers (no axios) ---
+async function aadToken() {
+  const params = new URLSearchParams();
+  params.append('client_id', process.env.AZURE_CLIENT_ID);
+  params.append('client_secret', process.env.AZURE_CLIENT_SECRET);
+  params.append('grant_type', 'client_credentials');
+  params.append('scope', 'https://analysis.windows.net/powerbi/api/.default');
 
-export default async function handler(req, res) {
-  // Set CORS headers for Chrome extension
-  const origin = req.headers.origin;
-  if (origin && origin.startsWith('chrome-extension://')) {
-    res.setHeader('Access-Control-Allow-Origin', origin);
-  } else {
-    res.setHeader('Access-Control-Allow-Origin', '*');
-  }
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-  res.setHeader('Access-Control-Max-Age', '86400');
-
-  // Handle preflight OPTIONS request
-  if (req.method === 'OPTIONS') {
-    res.status(200).end();
-    return;
-  }
-
-  // Only allow POST requests
-  if (req.method !== 'POST') {
-    return res.status(405).json({ success: false, error: 'Method not allowed' });
-  }
-
-  try {
-    const { workspaceId, reportId, parameters, embedToken, startDate, endDate } = req.body;
-    
-    console.log('📊 Vercel: Received export request:', { 
-      workspaceId, 
-      reportId, 
-      startDate, 
-      endDate,
-      hasEmbedToken: !!embedToken,
-      parametersCount: parameters?.length || 0,
-      parameters: parameters
-    });
-
-    if (!workspaceId || !reportId || !parameters) {
-      console.error('📊 Vercel: Missing required parameters:', { workspaceId, reportId, parameters });
-      return res.status(400).json({ 
-        success: false, 
-        error: 'Missing required parameters: workspaceId, reportId, parameters' 
-      });
-    }
-
-    // Use the embed token for PowerBI API calls
-    const token = embedToken;
-    if (!token) {
-      console.error('📊 Vercel: No embed token provided');
-      return res.status(400).json({ 
-        success: false, 
-        error: 'No embed token provided' 
-      });
-    }
-
-    console.log('📊 Vercel: Using embed token (first 20 chars):', token.substring(0, 20) + '...');
-
-    // 1) Start export job (CSV for RDL)
-    console.log(`📊 Vercel: Starting export job for report ${reportId} in group ${workspaceId}...`);
-    console.log(`📊 Vercel: PowerBI API URL: https://api.powerbi.com/v1.0/myorg/groups/${workspaceId}/reports/${reportId}/ExportTo`);
-    console.log(`📊 Vercel: Request payload:`, {
-      format: "CSV",
-      paginatedReportConfiguration: { parameterValues: parameters }
-    });
-    
-    const startResponse = await fetch(
-      `https://api.powerbi.com/v1.0/myorg/groups/${workspaceId}/reports/${reportId}/ExportTo`,
-      {
-        method: 'POST',
-        headers: { 
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          format: "CSV",
-          paginatedReportConfiguration: { parameterValues: parameters }
-        })
-      }
-    );
-
-    if (!startResponse.ok) {
-      const errorData = await startResponse.text();
-      console.error('📊 Vercel: PowerBI API error:', {
-        status: startResponse.status,
-        statusText: startResponse.statusText,
-        data: errorData
-      });
-      throw new Error(`PowerBI API error: ${startResponse.status} - ${errorData}`);
-    }
-
-    const start = await startResponse.json();
-
-    const exportId = start.id;
-    console.log(`📊 Vercel: Export job started, ID: ${exportId}`);
-
-    // 2) Poll until Succeeded
-    console.log(`📊 Vercel: Polling status for export job ${exportId}...`);
-    for (let i = 0; i < 30; i++) { // Max 30 attempts (60 seconds)
-      await new Promise(r => setTimeout(r, 2000)); // Poll every 2 seconds
-      
-      const pollResponse = await fetch(
-        `https://api.powerbi.com/v1.0/myorg/groups/${workspaceId}/reports/${reportId}/exports/${exportId}`,
-        { 
-          headers: { 
-            Authorization: `Bearer ${token}` 
-          } 
-        }
-      );
-      
-      if (!pollResponse.ok) {
-        throw new Error(`Polling failed: ${pollResponse.status} - ${pollResponse.statusText}`);
-      }
-      
-      const poll = await pollResponse.json();
-      console.log(`📊 Vercel: Export status for ${exportId}: ${poll.status}`);
-      
-      if (poll.status === "Succeeded") break;
-      if (poll.status === "Failed") {
-        console.error("📊 Vercel: Export failed:", poll.error);
-        throw new Error(`Export failed: ${poll.error?.message || 'Unknown error'}`);
-      }
-      if (i === 29) { // Last attempt
-        throw new Error("Export polling timed out.");
-      }
-    }
-
-    // 3) Download the file bytes
-    console.log(`📊 Vercel: Export succeeded, downloading file for job ${exportId}...`);
-    const fileResponse = await fetch(
-      `https://api.powerbi.com/v1.0/myorg/groups/${workspaceId}/reports/${reportId}/exports/${exportId}/file`,
-      { 
-        headers: { 
-          Authorization: `Bearer ${token}` 
-        }
-      }
-    );
-    
-    if (!fileResponse.ok) {
-      throw new Error(`File download failed: ${fileResponse.status} - ${fileResponse.statusText}`);
-    }
-    
-    const fileBuffer = await fileResponse.arrayBuffer();
-    console.log(`📊 Vercel: File downloaded, size: ${fileBuffer.byteLength} bytes`);
-
-    // Convert to base64 and return
-    const base64 = Buffer.from(fileBuffer).toString("base64");
-    const filename = `KPI_Report_CSV_${startDate.replace(/\s+/g, '_')}_to_${endDate.replace(/\s+/g, '_')}.csv`;
-    
-    console.log(`📊 Vercel: Export completed successfully, filename: ${filename}`);
-    
-    res.status(200).json({ 
-      success: true, 
-      filename, 
-      base64 
-    });
-
-  } catch (error) {
-    console.error("📊 Vercel: Error in export-csv:", error.message);
-    res.status(500).json({ 
-      success: false, 
-      error: error.message 
-    });
-  }
+  const r = await fetch(
+    `https://login.microsoftonline.com/${process.env.AZURE_TENANT_ID}/oauth2/v2.0/token`,
+    { method: 'POST', headers: { 'content-type': 'application/x-www-form-urlencoded' }, body: params }
+  );
+  if (!r.ok) throw new Error(`AAD token failed: ${r.status} ${await r.text()}`);
+  const j = await r.json();
+  return j.access_token;
 }
+
+async function pbiPost(url, body, token) {
+  const r = await fetch(url, {
+    method: 'POST',
+    headers: { 'authorization': `Bearer ${token}`, 'content-type': 'application/json' },
+    body: JSON.stringify(body)
+  });
+  if (!r.ok) throw new Error(`PBI POST ${r.status}: ${await r.text()}`);
+  return r.json();
+}
+
+async function pbiGet(url, token, as = 'json') {
+  const r = await fetch(url, { headers: { 'authorization': `Bearer ${token}` } });
+  if (!r.ok) throw new Error(`PBI GET ${r.status}: ${await r.text()}`);
+  if (as === 'buffer') {
+    const ab = await r.arrayBuffer();
+    return Buffer.from(ab);
+  }
+  return r.json();
+}
+
+module.exports = async (req, res) => {
+  setCors(res, req.headers.origin);
+  if (req.method === 'OPTIONS') return res.status(204).end();
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Method Not Allowed' });
+
+  const step = { name: 'init' };
+  try {
+    const { groupId, reportId, params } = req.body || {};
+    if (!groupId || !reportId) return res.status(400).json({ error: 'Missing groupId/reportId' });
+
+    step.name = 'auth';
+    const token = await aadToken();
+
+    step.name = 'startExport';
+    const start = await pbiPost(
+      `https://api.powerbi.com/v1.0/myorg/groups/${groupId}/reports/${reportId}/ExportTo`,
+      { format: 'CSV', paginatedReportConfiguration: { parameterValues: params || [] } },
+      token
+    );
+    const exportId = start.id;
+
+    step.name = 'poll';
+    const deadline = Date.now() + 240000;
+    for (;;) {
+      await new Promise(r => setTimeout(r, 2000));
+      const poll = await pbiGet(
+        `https://api.powerbi.com/v1.0/myorg/groups/${groupId}/reports/${reportId}/exports/${exportId}`,
+        token
+      );
+      if (poll.status === 'Succeeded') break;
+      if (poll.status === 'Failed') throw new Error(`Export failed: ${JSON.stringify(poll)}`);
+      if (Date.now() > deadline) throw new Error('Timeout waiting for export');
+    }
+
+    step.name = 'download';
+    const buf = await pbiGet(
+      `https://api.powerbi.com/v1.0/myorg/groups/${groupId}/reports/${reportId}/exports/${exportId}/file`,
+      token,
+      'buffer'
+    );
+
+    const base64 = buf.toString('base64');
+    return res.status(200).json({ filename: `report_${Date.now()}.csv`, base64 });
+  } catch (e) {
+    // keep CORS headers on error responses
+    setCors(res, req.headers.origin);
+    const status = 500;
+    console.error('Export error step=', step.name, e);
+    return res.status(status).json({ error: 'PBI_EXPORT_FAILED', step: step.name, detail: String(e) });
+  }
+};

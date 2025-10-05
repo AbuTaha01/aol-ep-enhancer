@@ -2980,15 +2980,11 @@ class LaunchManager {
     try {
       console.log("📊 LaunchManager: Starting headless CSV export using Export-to-File REST API");
       
-      // Prepare the export request payload
+      // Prepare the export request payload for the new Azure AD-based API
       const exportRequest = {
-        embedToken: embedToken,
-        workspaceId: workspaceId,
+        groupId: workspaceId,
         reportId: reportId,
-        startDate: startDate,
-        endDate: endDate,
-        schoolName: schoolName,
-        parameters: [
+        params: [
           { name: 'SchoolID', value: schoolName === 'Bay/Queen' ? '5589' : '5703' },
           { name: 'RecursiveSchool', value: 'False' },
           { name: 'ProgramTypeID', value: '-1' },
@@ -3015,7 +3011,7 @@ class LaunchManager {
       
       const result = await response.json();
       
-      if (result.success) {
+      if (result.filename && result.base64) {
         // Convert base64 to blob and download
         const csvData = atob(result.base64);
         const blob = new Blob([csvData], { type: 'text/csv;charset=utf-8' });
@@ -3038,7 +3034,7 @@ class LaunchManager {
         
         return { success: true, data: { csvExported: true, filename: result.filename, method: 'HEADLESS_REST_API' } };
       } else {
-        throw new Error(result.error || 'Backend API returned error');
+        throw new Error(result.error || result.detail || 'Backend API returned error');
       }
       
     } catch (error) {
