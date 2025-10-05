@@ -4,11 +4,11 @@
   "functions": {
     "api/export-csv.js": {
       "maxDuration": 60,
-      "runtime": "nodejs18.x"
+      "runtime": "@vercel/node@3.0.18"
     },
     "api/health.js": {
       "maxDuration": 10,
-      "runtime": "nodejs18.x"
+      "runtime": "@vercel/node@3.0.18"
     }
   },
   "headers": [
