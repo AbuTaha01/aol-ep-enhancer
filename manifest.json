@@ -24,6 +24,7 @@
     "*://*.myaolcc.ca/*",
     "*://*.verifast.com/*",
     "*://*.momentest.net/*",
+    "*://*.vercel.app/*",
     "chrome-extension://*/"
   ],
   "web_accessible_resources": [
