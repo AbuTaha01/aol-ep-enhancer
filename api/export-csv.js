@@ -1,6 +1,20 @@
-const { setCors } = require('./_cors');
-
 // Helper functions using built-in fetch (Node.js 18+)
+function setCors(res, origin) {
+  const ALLOWED_ORIGINS = [
+    'chrome-extension://cjollmpjlbggmodndfamooliloonmnbh',
+    'http://localhost:3000',
+  ];
+  
+  if (origin && ALLOWED_ORIGINS.includes(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+  } else {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+  }
+  res.setHeader('Vary', 'Origin');
+  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.setHeader('Access-Control-Max-Age', '86400');
+}
 async function pbiPost(url, body, token) {
   const response = await fetch(url, {
     method: 'POST',

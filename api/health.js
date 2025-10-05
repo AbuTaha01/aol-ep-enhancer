@@ -1,6 +1,6 @@
 // Health check endpoint for the Vercel serverless function
 
-export default async function handler(req, res) {
+module.exports = async (req, res) => {
   // Set CORS headers for Chrome extension
   const origin = req.headers.origin;
   if (origin && origin.startsWith('chrome-extension://')) {
@@ -28,4 +28,4 @@ export default async function handler(req, res) {
   } else {
     res.status(405).json({ error: 'Method not allowed' });
   }
-}
+};
