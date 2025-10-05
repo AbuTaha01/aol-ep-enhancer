@@ -2999,25 +2999,21 @@ class LaunchManager {
         ]
       };
       
-      // Use message-based approach to call the background service worker
-      const response = await new Promise((resolve, reject) => {
-        chrome.runtime.sendMessage({
-          action: 'EXPORT_CSV',
-          payload: exportRequest
-        }, (response) => {
-          if (chrome.runtime.lastError) {
-            reject(new Error(chrome.runtime.lastError.message));
-          } else {
-            resolve(response);
-          }
-        });
+      // Call the Vercel API directly from service worker (no CORS issues with host_permissions)
+      const response = await fetch('https://aol-ep-enhancer-dkv34jxn6-mohammeds-projects-3be32dc8.vercel.app/api/export-csv', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(exportRequest)
       });
       
       if (!response.ok) {
-        throw new Error(response.error || 'Backend API returned error');
+        const errorText = await response.text();
+        throw new Error(`Backend API failed: ${response.status} - ${errorText}`);
       }
       
-      const result = response.data;
+      const result = await response.json();
       
       if (result.success) {
         // Convert base64 to blob and download
@@ -5026,30 +5022,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       .then(() => sendResponse({ success: true }))
       .catch(error => sendResponse({ success: false, error: error.message }));
     return true; // async response için
-  }
-  else if (request.action === 'EXPORT_CSV') {
-    console.log("📊 Background: CSV export request received", request.payload);
-    (async () => {
-      try {
-        const response = await fetch('https://aol-ep-enhancer-dkv34jxn6-mohammeds-projects-3be32dc8.vercel.app/api/export-csv', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(request.payload)
-        });
-        
-        if (!response.ok) {
-          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-        }
-        
-        const data = await response.json();
-        console.log("📊 Background: CSV export response received", data);
-        sendResponse({ ok: true, data });
-      } catch (error) {
-        console.error("📊 Background: CSV export error:", error);
-        sendResponse({ ok: false, error: error.message });
-      }
-    })();
-    return true; // Keep message channel open for async response
   }
 });
 
