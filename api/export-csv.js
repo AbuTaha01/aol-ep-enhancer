@@ -29,9 +29,18 @@ export default async function handler(req, res) {
   try {
     const { workspaceId, reportId, parameters, embedToken, startDate, endDate } = req.body;
     
-    console.log('📊 Vercel: Received export request:', { workspaceId, reportId, startDate, endDate });
+    console.log('📊 Vercel: Received export request:', { 
+      workspaceId, 
+      reportId, 
+      startDate, 
+      endDate,
+      hasEmbedToken: !!embedToken,
+      parametersCount: parameters?.length || 0,
+      parameters: parameters
+    });
 
     if (!workspaceId || !reportId || !parameters) {
+      console.error('📊 Vercel: Missing required parameters:', { workspaceId, reportId, parameters });
       return res.status(400).json({ 
         success: false, 
         error: 'Missing required parameters: workspaceId, reportId, parameters' 
@@ -41,14 +50,23 @@ export default async function handler(req, res) {
     // Use the embed token for PowerBI API calls
     const token = embedToken;
     if (!token) {
+      console.error('📊 Vercel: No embed token provided');
       return res.status(400).json({ 
         success: false, 
         error: 'No embed token provided' 
       });
     }
 
+    console.log('📊 Vercel: Using embed token (first 20 chars):', token.substring(0, 20) + '...');
+
     // 1) Start export job (CSV for RDL)
     console.log(`📊 Vercel: Starting export job for report ${reportId} in group ${workspaceId}...`);
+    console.log(`📊 Vercel: PowerBI API URL: https://api.powerbi.com/v1.0/myorg/groups/${workspaceId}/reports/${reportId}/ExportTo`);
+    console.log(`📊 Vercel: Request payload:`, {
+      format: "CSV",
+      paginatedReportConfiguration: { parameterValues: parameters }
+    });
+    
     const start = await axios.post(
       `https://api.powerbi.com/v1.0/myorg/groups/${workspaceId}/reports/${reportId}/ExportTo`,
       {
@@ -61,7 +79,15 @@ export default async function handler(req, res) {
           'Content-Type': 'application/json'
         } 
       }
-    );
+    ).catch(error => {
+      console.error('📊 Vercel: PowerBI API error:', {
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data,
+        message: error.message
+      });
+      throw new Error(`PowerBI API error: ${error.response?.status} - ${error.response?.data?.error?.message || error.message}`);
+    });
 
     const exportId = start.data.id;
     console.log(`📊 Vercel: Export job started, ID: ${exportId}`);
