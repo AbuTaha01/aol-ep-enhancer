@@ -3011,33 +3011,43 @@ class LaunchManager {
         const tabUpdateListener = (tabIdUpdated, changeInfo, tab) => {
           console.log('📊 OAuth: Tab updated:', { tabIdUpdated, tabId, url: changeInfo.url, status: changeInfo.status });
           
-          if (tabIdUpdated === tabId && changeInfo.url && changeInfo.url.includes('auth-callback.html')) {
-            console.log('📊 OAuth: Callback URL detected:', changeInfo.url);
+          // Only process if it's our tab and the URL has changed
+          if (tabIdUpdated === tabId && changeInfo.url && changeInfo.status === 'complete') {
+            console.log('📊 OAuth: Tab completed loading:', changeInfo.url);
             
-            // Extract code from URL
-            const url = new URL(changeInfo.url);
-            const code = url.searchParams.get('code');
-            const error = url.searchParams.get('error');
-            const errorDescription = url.searchParams.get('error_description');
-            
-            console.log('📊 OAuth: URL params:', { code: !!code, error, errorDescription });
-            
-            // Remove listener
-            chrome.tabs.onUpdated.removeListener(tabUpdateListener);
-            
-            // Close popup window
-            chrome.windows.remove(popupWindow.id);
-            
-            if (error) {
-              console.error('📊 OAuth: Authentication error:', error, errorDescription);
-              reject(new Error(`Authentication error: ${error}${errorDescription ? ' - ' + errorDescription : ''}`));
-            } else if (code) {
-              console.log('📊 OAuth: Authorization code received, exchanging for token...');
-              // Exchange code for token
-              this.exchangeCodeForToken(code).then(resolve).catch(reject);
-            } else {
-              console.error('📊 OAuth: No authorization code in URL:', changeInfo.url);
-              reject(new Error('No authorization code received'));
+            // Check if this is the callback URL
+            if (changeInfo.url.includes('auth-callback.html')) {
+              console.log('📊 OAuth: Callback URL detected:', changeInfo.url);
+              
+              // Extract code from URL
+              const url = new URL(changeInfo.url);
+              const code = url.searchParams.get('code');
+              const error = url.searchParams.get('error');
+              const errorDescription = url.searchParams.get('error_description');
+              
+              console.log('📊 OAuth: URL params:', { code: !!code, error, errorDescription });
+              
+              // Remove listener
+              chrome.tabs.onUpdated.removeListener(tabUpdateListener);
+              
+              // Close popup window
+              chrome.windows.remove(popupWindow.id);
+              
+              if (error) {
+                console.error('📊 OAuth: Authentication error:', error, errorDescription);
+                reject(new Error(`Authentication error: ${error}${errorDescription ? ' - ' + errorDescription : ''}`));
+              } else if (code) {
+                console.log('📊 OAuth: Authorization code received, exchanging for token...');
+                // Exchange code for token
+                this.exchangeCodeForToken(code).then(resolve).catch(reject);
+              } else {
+                console.error('📊 OAuth: No authorization code in URL:', changeInfo.url);
+                reject(new Error('No authorization code received'));
+              }
+            }
+            // Ignore the initial login URL - wait for the callback
+            else if (changeInfo.url.includes('login.microsoftonline.com')) {
+              console.log('📊 OAuth: Login page loaded, waiting for user authentication...');
             }
           }
         };
