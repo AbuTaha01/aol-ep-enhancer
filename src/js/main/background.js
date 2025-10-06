@@ -2980,11 +2980,10 @@ class LaunchManager {
     try {
       console.log("📊 LaunchManager: Starting headless CSV export using Export-to-File REST API");
       
-      // Prepare the export request payload for the new Azure AD-based API
+      // Prepare the export request payload for the Azure AD-based API
       const exportRequest = {
         groupId: workspaceId,
         reportId: reportId,
-        embedToken: embedToken,
         params: [
           { name: 'SchoolID', value: schoolName === 'Bay/Queen' ? '5589' : '5703' },
           { name: 'RecursiveSchool', value: 'False' },

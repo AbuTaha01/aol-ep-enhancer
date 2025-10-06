@@ -1,5 +1,31 @@
 const axios = require('axios');
 
+// Azure AD token function for PowerBI API access
+async function getAzureADToken() {
+  try {
+    const params = new URLSearchParams();
+    params.append('client_id', process.env.AZURE_CLIENT_ID);
+    params.append('client_secret', process.env.AZURE_CLIENT_SECRET);
+    params.append('grant_type', 'client_credentials');
+    params.append('scope', 'https://analysis.windows.net/powerbi/api/.default');
+
+    const response = await axios.post(
+      `https://login.microsoftonline.com/${process.env.AZURE_TENANT_ID}/oauth2/v2.0/token`,
+      params,
+      {
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded'
+        }
+      }
+    );
+
+    return response.data.access_token;
+  } catch (error) {
+    console.error('Azure AD token error:', error.response?.data || error.message);
+    throw error;
+  }
+}
+
 function setCors(res, origin) {
   const ALLOWED_ORIGINS = [
     'chrome-extension://cjollmpjlbggmodndfamooliloonmnbh',
@@ -25,13 +51,14 @@ module.exports = async (req, res) => {
 
   const step = { name: 'init' };
   try {
-      const { groupId, reportId, params, embedToken } = req.body || {};
-      console.log('📊 Vercel: Received export request:', { groupId, reportId, paramsCount: params?.length || 0, hasEmbedToken: !!embedToken });
+      const { groupId, reportId, params } = req.body || {};
+      console.log('📊 Vercel: Received export request:', { groupId, reportId, paramsCount: params?.length || 0 });
       
       if (!groupId || !reportId) return res.status(400).json({ error: 'Missing groupId/reportId' });
 
-      const token = embedToken || process.env.POWERBI_EMBED_TOKEN;
-      if (!token) return res.status(500).json({ error: 'No PowerBI embed token provided' });
+      // Get Azure AD token for PowerBI API access
+      const token = await getAzureADToken();
+      if (!token) return res.status(500).json({ error: 'Failed to get Azure AD token' });
 
     step.name = 'startExport';
     const start = await axios.post(
