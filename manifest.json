@@ -15,7 +15,8 @@
     "declarativeNetRequest",
     "webRequest",
     "activeTab",
-    "cookies"
+    "cookies",
+    "windows"
   ],
   "host_permissions": [
     "*://aoltorontoagents.ca/*",

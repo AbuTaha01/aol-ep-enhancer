@@ -2975,7 +2975,7 @@ class LaunchManager {
     }
   }
 
-  // Get Azure AD token via OAuth flow
+  // Get Azure AD token via OAuth flow using Chrome extension APIs
   static async getAzureADToken() {
     return new Promise((resolve, reject) => {
       // Create OAuth URL
@@ -2992,29 +2992,91 @@ class LaunchManager {
         `response_mode=query&` +
         `state=chrome-extension-auth`;
       
-      // Open popup window for OAuth
-      const popup = window.open(authUrl, 'azure-auth', 'width=600,height=700,scrollbars=yes,resizable=yes');
-      
-      // Listen for message from popup
-      const messageListener = (event) => {
-        if (event.data.type === 'AZURE_AD_TOKEN') {
-          window.removeEventListener('message', messageListener);
-          popup.close();
-          resolve(event.data.token);
+      // Use Chrome extension APIs to open popup
+      chrome.windows.create({
+        url: authUrl,
+        type: 'popup',
+        width: 600,
+        height: 700,
+        focused: true
+      }, (popupWindow) => {
+        if (chrome.runtime.lastError) {
+          reject(new Error('Failed to open authentication window: ' + chrome.runtime.lastError.message));
+          return;
         }
-      };
-      
-      window.addEventListener('message', messageListener);
-      
-      // Handle popup closed
-      const checkClosed = setInterval(() => {
-        if (popup.closed) {
-          clearInterval(checkClosed);
-          window.removeEventListener('message', messageListener);
-          reject(new Error('Authentication cancelled by user'));
-        }
-      }, 1000);
+        
+        // Listen for tab updates to detect redirect
+        const tabId = popupWindow.tabs[0].id;
+        
+        const tabUpdateListener = (tabIdUpdated, changeInfo, tab) => {
+          if (tabIdUpdated === tabId && changeInfo.url && changeInfo.url.includes('auth-callback.html')) {
+            // Extract code from URL
+            const url = new URL(changeInfo.url);
+            const code = url.searchParams.get('code');
+            const error = url.searchParams.get('error');
+            
+            // Remove listener
+            chrome.tabs.onUpdated.removeListener(tabUpdateListener);
+            
+            // Close popup window
+            chrome.windows.remove(popupWindow.id);
+            
+            if (error) {
+              reject(new Error(`Authentication error: ${error}`));
+            } else if (code) {
+              // Exchange code for token
+              this.exchangeCodeForToken(code).then(resolve).catch(reject);
+            } else {
+              reject(new Error('No authorization code received'));
+            }
+          }
+        };
+        
+        chrome.tabs.onUpdated.addListener(tabUpdateListener);
+        
+        // Handle window closed
+        const windowRemovedListener = (windowId) => {
+          if (windowId === popupWindow.id) {
+            chrome.tabs.onUpdated.removeListener(tabUpdateListener);
+            chrome.windows.onRemoved.removeListener(windowRemovedListener);
+            reject(new Error('Authentication cancelled by user'));
+          }
+        };
+        
+        chrome.windows.onRemoved.addListener(windowRemovedListener);
+      });
     });
+  }
+
+  // Exchange authorization code for access token
+  static async exchangeCodeForToken(code) {
+    try {
+      const response = await fetch('https://aol-ep-enhancer.vercel.app/api/export-csv', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          action: 'exchange_code',
+          code: code
+        })
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Token exchange failed: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      
+      if (data.access_token) {
+        return data.access_token;
+      } else {
+        throw new Error(data.error || 'No access token received');
+      }
+    } catch (error) {
+      console.error('Token exchange error:', error);
+      throw error;
+    }
   }
 
   // Headless CSV export using Export-to-File REST API (no embedding)
