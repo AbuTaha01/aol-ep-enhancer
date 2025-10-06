@@ -2975,15 +2975,61 @@ class LaunchManager {
     }
   }
 
+  // Get Azure AD token via OAuth flow
+  static async getAzureADToken() {
+    return new Promise((resolve, reject) => {
+      // Create OAuth URL
+      const clientId = '877ea3df-12b5-4128-b67c-287b7481baef'; // Your Azure AD client ID
+      const tenantId = '4f166673-e32e-40ae-a820-c7fe9879cd7e'; // Your tenant ID from the token
+      const redirectUri = 'https://aol-ep-enhancer.vercel.app/auth-callback.html';
+      const scope = 'https://analysis.windows.net/powerbi/api/Report.Read https://analysis.windows.net/powerbi/api/Dataset.Read https://analysis.windows.net/powerbi/api/Workspace.Read';
+      
+      const authUrl = `https://login.microsoftonline.com/${tenantId}/oauth2/v2.0/authorize?` +
+        `client_id=${clientId}&` +
+        `response_type=code&` +
+        `redirect_uri=${encodeURIComponent(redirectUri)}&` +
+        `scope=${encodeURIComponent(scope)}&` +
+        `response_mode=query&` +
+        `state=chrome-extension-auth`;
+      
+      // Open popup window for OAuth
+      const popup = window.open(authUrl, 'azure-auth', 'width=600,height=700,scrollbars=yes,resizable=yes');
+      
+      // Listen for message from popup
+      const messageListener = (event) => {
+        if (event.data.type === 'AZURE_AD_TOKEN') {
+          window.removeEventListener('message', messageListener);
+          popup.close();
+          resolve(event.data.token);
+        }
+      };
+      
+      window.addEventListener('message', messageListener);
+      
+      // Handle popup closed
+      const checkClosed = setInterval(() => {
+        if (popup.closed) {
+          clearInterval(checkClosed);
+          window.removeEventListener('message', messageListener);
+          reject(new Error('Authentication cancelled by user'));
+        }
+      }, 1000);
+    });
+  }
+
   // Headless CSV export using Export-to-File REST API (no embedding)
   static async exportKPIReportHeadless(embedToken, workspaceId, reportId, startDate, endDate, schoolName) {
     try {
       console.log("📊 LaunchManager: Starting headless CSV export using Export-to-File REST API");
       
+      // First, try to get Azure AD token via OAuth flow
+      const azureToken = await this.getAzureADToken();
+      
       // Prepare the export request payload for the Azure AD-based API
       const exportRequest = {
         groupId: workspaceId,
         reportId: reportId,
+        azureToken: azureToken,
         params: [
           { name: 'SchoolID', value: schoolName === 'Bay/Queen' ? '5589' : '5703' },
           { name: 'RecursiveSchool', value: 'False' },

@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Authentication Callback</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 50px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 500px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .success {
+            color: #28a745;
+        }
+        .error {
+            color: #dc3545;
+        }
+        .loading {
+            color: #007bff;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2 id="status">Processing Authentication...</h2>
+        <p id="message">Please wait while we complete your authentication.</p>
+    </div>
+
+    <script>
+        // Get URL parameters
+        const urlParams = new URLSearchParams(window.location.search);
+        const code = urlParams.get('code');
+        const error = urlParams.get('error');
+        const errorDescription = urlParams.get('error_description');
+
+        if (error) {
+            document.getElementById('status').textContent = 'Authentication Error';
+            document.getElementById('status').className = 'error';
+            document.getElementById('message').textContent = `Error: ${error}${errorDescription ? ' - ' + errorDescription : ''}`;
+            
+            setTimeout(() => {
+                window.close();
+            }, 3000);
+        } else if (code) {
+            document.getElementById('status').textContent = 'Exchanging Code for Token...';
+            document.getElementById('status').className = 'loading';
+            
+            // Exchange code for token
+            fetch('https://aol-ep-enhancer.vercel.app/api/export-csv', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    action: 'exchange_code',
+                    code: code
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.access_token) {
+                    document.getElementById('status').textContent = 'Authentication Successful!';
+                    document.getElementById('status').className = 'success';
+                    document.getElementById('message').textContent = 'You can close this window now.';
+                    
+                    // Send token to parent window (Chrome extension)
+                    if (window.opener) {
+                        window.opener.postMessage({
+                            type: 'AZURE_AD_TOKEN',
+                            token: data.access_token
+                        }, '*');
+                    }
+                    
+                    setTimeout(() => {
+                        window.close();
+                    }, 2000);
+                } else {
+                    throw new Error(data.error || 'Failed to get access token');
+                }
+            })
+            .catch(error => {
+                document.getElementById('status').textContent = 'Token Exchange Failed';
+                document.getElementById('status').className = 'error';
+                document.getElementById('message').textContent = `Error: ${error.message}`;
+                
+                setTimeout(() => {
+                    window.close();
+                }, 3000);
+            });
+        } else {
+            document.getElementById('status').textContent = 'Invalid Request';
+            document.getElementById('status').className = 'error';
+            document.getElementById('message').textContent = 'No authorization code received.';
+            
+            setTimeout(() => {
+                window.close();
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
