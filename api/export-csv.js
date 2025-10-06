@@ -15,6 +15,7 @@ function setCors(res, origin) {
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   res.setHeader('Access-Control-Max-Age', '86400');
 }
+
 async function pbiPost(url, body, token) {
   const response = await fetch(url, {
     method: 'POST',
@@ -41,7 +42,7 @@ async function pbiGet(url, token, as = 'json') {
 }
 
 module.exports = async (req, res) => {
-  console.log('🚀 NEW VERSION 2.0 - NO AXIOS - Function started');
+  console.log('🚀 CLEAN VERSION - NO AXIOS - Function started');
   setCors(res, req.headers.origin);
   if (req.method === 'OPTIONS') return res.status(204).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method Not Allowed' });

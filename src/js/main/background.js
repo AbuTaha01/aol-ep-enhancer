@@ -1,7 +1,7 @@
 try {
-  console.log("🚀 Background script loading...");
+console.log("🚀 Background script loading...");
 
-  const config = {
+const config = {
   LOGIN_URL: 'https://aoltorontoagents.ca/student_contract/login/',
   STUDENT_LOGIN_URL: 'https://myaolcc.ca/studentportal/login/',
   MINE_LIST_URL: 'https://aoltorontoagents.ca/student_contract/chat/mine_list.php',
@@ -2828,19 +2828,19 @@ class LaunchManager {
                 
                 const response = await fetch(requestUrl, {
         method: 'POST',
-        headers: {
-          'Accept': 'application/json, text/javascript, */*; q=0.01',
+                    headers: {
+                        'Accept': 'application/json, text/javascript, */*; q=0.01',
           'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
-          'X-Requested-With': 'XMLHttpRequest',
-          'Origin': 'https://launch.academyoflearning.net',
-          'Referer': 'https://launch.academyoflearning.net/Reports',
-          'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
-          'Pragma': 'no-cache',
-          'Expires': '0'
-        },
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Origin': 'https://launch.academyoflearning.net',
+                        'Referer': 'https://launch.academyoflearning.net/Reports',
+                        'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
+                        'Pragma': 'no-cache',
+                        'Expires': '0'
+                    },
         body: formData.toString(),
-        credentials: 'include'
-      });
+                    credentials: 'include'
+                });
 
                 console.log("📥 LaunchManager: Response status:", response.status, response.statusText);
                 if (!response.ok) {
@@ -2876,7 +2876,7 @@ class LaunchManager {
         );
         
         return { success: true, data: reportData };
-      } else {
+                            } else {
         console.log("❌ LaunchManager: Invalid response format - missing reportUrl");
         console.log("❌ LaunchManager: Full response object:", reportData);
         throw new Error('Invalid response format from report endpoint');
@@ -2954,14 +2954,14 @@ class LaunchManager {
           embedToken.Token,
           workspaceId,
           reportId,
-          startDate,
-          endDate,
+                    startDate,
+                    endDate,
           schoolName
         );
         
         if (headlessResult.success) {
           return headlessResult;
-        } else {
+                        } else {
           throw new Error(headlessResult.error || 'Headless export failed');
         }
       }
@@ -2996,9 +2996,9 @@ class LaunchManager {
       };
       
       // Call the Vercel API directly from service worker (no CORS issues with host_permissions)
-      const response = await fetch('https://aol-ep-enhancer-dkv34jxn6-mohammeds-projects-3be32dc8.vercel.app/api/export-csv-v2', {
-        method: 'POST',
-        headers: {
+      const response = await fetch('https://aol-ep-enhancer-dkv34jxn6-mohammeds-projects-3be32dc8.vercel.app/api/export-csv', {
+                            method: 'POST',
+                            headers: {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify(exportRequest)
@@ -3015,32 +3015,32 @@ class LaunchManager {
         // Convert base64 to blob and download
         const csvData = atob(result.base64);
         const blob = new Blob([csvData], { type: 'text/csv;charset=utf-8' });
-        const url = URL.createObjectURL(blob);
-        
+                                        const url = URL.createObjectURL(blob);
+                                        
         // Use Chrome downloads API to download the file
         await chrome.downloads.download({
-          url: url,
+                                            url: url,
           filename: result.filename,
           saveAs: false
         });
         
         // Clean up the URL
         URL.revokeObjectURL(url);
-        
-        await utils.showHDNotification(
+                                                
+                                                await utils.showHDNotification(
           'KPI Report CSV Downloaded',
           `CSV file has been exported using Export-to-File REST API and downloaded to your Downloads folder.`
-        );
-        
+                                                );
+                                                
         return { success: true, data: { csvExported: true, filename: result.filename, method: 'HEADLESS_REST_API' } };
-      } else {
+                                            } else {
         throw new Error(result.error || result.detail || 'Backend API returned error');
       }
       
     } catch (error) {
       console.error("📊 LaunchManager: Headless export error:", error);
-      
-      await utils.showHDNotification(
+                
+                await utils.showHDNotification(
         'KPI Report Export Error',
         `Headless CSV export failed: ${error.message}. Please check if the backend server is running.`
       );

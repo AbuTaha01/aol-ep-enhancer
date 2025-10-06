@@ -4,7 +4,7 @@
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "functions": {
-    "api/export-csv-v2.js": {
+    "api/export-csv.js": {
       "maxDuration": 300
     },
     "api/health.js": {
