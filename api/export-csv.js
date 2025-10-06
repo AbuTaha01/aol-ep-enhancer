@@ -18,7 +18,7 @@ function setCors(res, origin) {
 }
 
 module.exports = async (req, res) => {
-  console.log('🚀 AXIOS VERSION - Function started');
+  console.log('🚀 AXIOS VERSION - Function started - DEPLOYMENT ' + Date.now());
   setCors(res, req.headers.origin);
   if (req.method === 'OPTIONS') return res.status(204).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method Not Allowed' });
