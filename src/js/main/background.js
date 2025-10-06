@@ -2982,7 +2982,7 @@ class LaunchManager {
       const clientId = '877ea3df-12b5-4128-b67c-287b7481baef'; // Your Azure AD client ID
       const tenantId = '4f166673-e32e-40ae-a820-c7fe9879cd7e'; // Your tenant ID from the token
       const redirectUri = 'https://aol-ep-enhancer.vercel.app/auth-callback.html';
-      const scope = 'https://analysis.windows.net/powerbi/api/Report.Read https://analysis.windows.net/powerbi/api/Dataset.Read https://analysis.windows.net/powerbi/api/Workspace.Read';
+      const scope = 'https://analysis.windows.net/powerbi/api/.default';
       
       const authUrl = `https://login.microsoftonline.com/${tenantId}/oauth2/v2.0/authorize?` +
         `client_id=${clientId}&` +
@@ -3009,11 +3009,18 @@ class LaunchManager {
         const tabId = popupWindow.tabs[0].id;
         
         const tabUpdateListener = (tabIdUpdated, changeInfo, tab) => {
+          console.log('📊 OAuth: Tab updated:', { tabIdUpdated, tabId, url: changeInfo.url, status: changeInfo.status });
+          
           if (tabIdUpdated === tabId && changeInfo.url && changeInfo.url.includes('auth-callback.html')) {
+            console.log('📊 OAuth: Callback URL detected:', changeInfo.url);
+            
             // Extract code from URL
             const url = new URL(changeInfo.url);
             const code = url.searchParams.get('code');
             const error = url.searchParams.get('error');
+            const errorDescription = url.searchParams.get('error_description');
+            
+            console.log('📊 OAuth: URL params:', { code: !!code, error, errorDescription });
             
             // Remove listener
             chrome.tabs.onUpdated.removeListener(tabUpdateListener);
@@ -3022,11 +3029,14 @@ class LaunchManager {
             chrome.windows.remove(popupWindow.id);
             
             if (error) {
-              reject(new Error(`Authentication error: ${error}`));
+              console.error('📊 OAuth: Authentication error:', error, errorDescription);
+              reject(new Error(`Authentication error: ${error}${errorDescription ? ' - ' + errorDescription : ''}`));
             } else if (code) {
+              console.log('📊 OAuth: Authorization code received, exchanging for token...');
               // Exchange code for token
               this.exchangeCodeForToken(code).then(resolve).catch(reject);
             } else {
+              console.error('📊 OAuth: No authorization code in URL:', changeInfo.url);
               reject(new Error('No authorization code received'));
             }
           }
@@ -3051,6 +3061,8 @@ class LaunchManager {
   // Exchange authorization code for access token
   static async exchangeCodeForToken(code) {
     try {
+      console.log('📊 OAuth: Exchanging code for token...', { codeLength: code.length });
+      
       const response = await fetch('https://aol-ep-enhancer.vercel.app/api/export-csv', {
         method: 'POST',
         headers: {
@@ -3062,19 +3074,25 @@ class LaunchManager {
         })
       });
       
+      console.log('📊 OAuth: Token exchange response:', { status: response.status, ok: response.ok });
+      
       if (!response.ok) {
-        throw new Error(`Token exchange failed: ${response.status}`);
+        const errorText = await response.text();
+        console.error('📊 OAuth: Token exchange failed:', errorText);
+        throw new Error(`Token exchange failed: ${response.status} - ${errorText}`);
       }
       
       const data = await response.json();
+      console.log('📊 OAuth: Token exchange data:', { hasToken: !!data.access_token, error: data.error });
       
       if (data.access_token) {
+        console.log('📊 OAuth: Successfully received access token');
         return data.access_token;
       } else {
         throw new Error(data.error || 'No access token received');
       }
     } catch (error) {
-      console.error('Token exchange error:', error);
+      console.error('📊 OAuth: Token exchange error:', error);
       throw error;
     }
   }

@@ -8,7 +8,7 @@ async function getAzureADDelegatedToken(authorizationCode) {
     params.append('code', authorizationCode);
     params.append('grant_type', 'authorization_code');
     params.append('redirect_uri', process.env.AZURE_REDIRECT_URI);
-    params.append('scope', 'https://analysis.windows.net/powerbi/api/Report.Read https://analysis.windows.net/powerbi/api/Dataset.Read https://analysis.windows.net/powerbi/api/Workspace.Read');
+    params.append('scope', 'https://analysis.windows.net/powerbi/api/.default');
 
     const response = await axios.post(
       `https://login.microsoftonline.com/${process.env.AZURE_TENANT_ID}/oauth2/v2.0/token`,
