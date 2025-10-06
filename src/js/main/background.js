@@ -2996,7 +2996,7 @@ class LaunchManager {
       };
       
       // Call the Vercel API directly from service worker (no CORS issues with host_permissions)
-      const response = await fetch('https://aol-ep-enhancer-dkv34jxn6-mohammeds-projects-3be32dc8.vercel.app/api/export-csv', {
+      const response = await fetch('https://aol-ep-enhancer-dkv34jxn6-mohammeds-projects-3be32dc8.vercel.app/api/export-csv-v2', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
