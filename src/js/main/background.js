@@ -2984,6 +2984,7 @@ class LaunchManager {
       const exportRequest = {
         groupId: workspaceId,
         reportId: reportId,
+        embedToken: embedToken,
         params: [
           { name: 'SchoolID', value: schoolName === 'Bay/Queen' ? '5589' : '5703' },
           { name: 'RecursiveSchool', value: 'False' },

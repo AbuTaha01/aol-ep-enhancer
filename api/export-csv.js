@@ -25,13 +25,13 @@ module.exports = async (req, res) => {
 
   const step = { name: 'init' };
   try {
-    const { groupId, reportId, params } = req.body || {};
-    console.log('📊 Vercel: Received export request:', { groupId, reportId, paramsCount: params?.length || 0 });
-    
-    if (!groupId || !reportId) return res.status(400).json({ error: 'Missing groupId/reportId' });
+      const { groupId, reportId, params, embedToken } = req.body || {};
+      console.log('📊 Vercel: Received export request:', { groupId, reportId, paramsCount: params?.length || 0, hasEmbedToken: !!embedToken });
+      
+      if (!groupId || !reportId) return res.status(400).json({ error: 'Missing groupId/reportId' });
 
-    const token = process.env.POWERBI_EMBED_TOKEN;
-    if (!token) return res.status(500).json({ error: 'No PowerBI embed token configured' });
+      const token = embedToken || process.env.POWERBI_EMBED_TOKEN;
+      if (!token) return res.status(500).json({ error: 'No PowerBI embed token provided' });
 
     step.name = 'startExport';
     const start = await axios.post(
